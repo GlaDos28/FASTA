@@ -3,14 +3,23 @@ package main
 import (
     "./algo"
     "./structs"
+    "./util"
     "fmt"
+    "os"
 )
 
 func main() {
-    sequence     := "ATTG"
+    if len(os.Args) <= 1 {
+        fmt.Println("Usage: go run cli.go <converted DB clusters directory path>")
+        return
+    }
+
+    sequence     := "MASSINGRKPSEIFKAQALLYKHIYAFIDSMSLKWAVEMNIPNIIQNHGKPISLSNLVSILQVPSSKIGNVRRLMRYLAHNGFFEIITKEEESYALTVASELLVRGSDLCLAPMVECVLDPTLSGSYHELKKWIYEEDLTLFGVTLGSGFWDFLDKNPEYNTSFNDAMASDSKLINLALRDCDFVFDGLESIVDVGGGTGTTAKIICETFPKLKCIVFDRPQVVENLSGSNNLTYVGGDMFTSIPNADAVLLKYILHNWTDKDCLRILKKCKEAVTNDGKRGKVTIIDMVIDKKKDENQVTQIKLLMDVNMACLNGKERNEEEWKKLFIEAGFQHYKISPLTGFLSLIEIYP"
+    dbDirPath    := os.Args[1]
     weightMatrix := structs.Blosum62()
 
-    var sequenceDb structs.SequenceDb
+    sequenceDb := structs.FromClusters(dbDirPath)
+    fmt.Println("Clusters were successfully loaded")
 
     // Fill input bundle
 
@@ -27,16 +36,27 @@ func main() {
 
     // Call FASTA algorithm
 
+    t1 := util.CurTime()
     result := algo.FASTA(&input, sequenceDb)
+    t2 := util.CurTime()
+
+    timeNano := t2 - t1
 
     // Print result
 
     fmt.Println("Input sequence:")
     fmt.Println(sequence)
+    fmt.Println("Converted DB clusters directory path:")
+    fmt.Println(dbDirPath)
+
+    fmt.Println()
+    fmt.Println("FASTA result:")
 
     for _, match := range result {
         fmt.Println()
         fmt.Println(match.DbSequence)
         fmt.Printf("Score: %d\n", match.Score)
     }
+
+    fmt.Printf("\nTotal time: %.3f sec\n", float64(timeNano / 1000000) / 1000)
 }

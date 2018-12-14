@@ -1,6 +1,8 @@
 package structs
 
-import "../util"
+import (
+    "../util"
+)
 
 /* --- */
 
@@ -15,7 +17,7 @@ type SeqPair struct {
 
 // Returns weight from WeightMatrix for given symbols in s1 and s2.
 func (sp *SeqPair) WeightIn(wm *WeightMatrix, s1Ind, s2Ind int) int {
-    return wm.WeightOf(sp.S1[s1Ind], sp.S2[s2Ind])
+    return (*wm)[util.CombineSymbolPair(sp.S1[s1Ind], sp.S2[s2Ind])]
 }
 
 // Returns symbol number in given diagonal related to this SeqPair.

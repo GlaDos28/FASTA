@@ -1,6 +1,8 @@
 package structs
 
-import "../util"
+import (
+    "../util"
+)
 
 /* --- */
 

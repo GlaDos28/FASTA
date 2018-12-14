@@ -1,7 +1,8 @@
 package structs
 
-import "sort"
-import "../util"
+import (
+    "../util"
+)
 
 /* --- */
 
@@ -19,25 +20,26 @@ type DiagonalDotData struct {
 
 // Calculates DiagonalDotData by given SeqDotData of each sequence S1 and S2.
 // Lengths are used for determining array size and start diagonal offset.
-func FormDiagonalDotData(s1Dots, s2Dots *SeqDotData, s1Len, s2Len int) *DiagonalDotData {
+func FormDiagonalDotData(s1Dots *SeqDotData, s2 string, s1Len int) *DiagonalDotData {
 
     // Initialize Data
+
+    s2Len := len(s2)
 
     ddd := DiagonalDotData {
         make([]uint, s1Len + s2Len - 1),
         -(s1Len - 1),
     }
 
-    // Fill Data
+    // Fill data
 
-    for k, v1 := range *s1Dots {
-        v2 := (*s2Dots)[k]
+    for s2Ind := 0; s2Ind < s2Len - 1; s2Ind += 1 {
+        key := util.CombineSymbolPair(s2[s2Ind], s2[s2Ind + 1])
+        value := (*s1Dots)[key]
 
-        if v2 != nil {
-            for i := range v1 {
-                for j := range v2 {
-                    ddd.Data[i - j] += 1
-                }
+        if value != nil {
+            for _, s1Ind := range value {
+                ddd.Data[s2Ind - s1Ind - ddd.StartOffset] += 1
             }
         }
     }
@@ -50,23 +52,29 @@ func FormDiagonalDotData(s1Dots, s2Dots *SeqDotData, s1Len, s2Len int) *Diagonal
 // Selects <amount> best (by dot match number) diagonals.
 func (ddd *DiagonalDotData) SelectBestDiagonals(amount int) []Diagonal {
 
-    // Initialize index array for getting best indices (i.e. diagonals)
+    // Store array of best values (and indices) with naive traverse and update.
 
-    indices := make([]Diagonal, len(ddd.Data))
+    bestValues := make([]uint, amount + 1)
+    bestValues[amount] = 1000000
+    bestIndices := make([]Diagonal, amount)
 
-    for i := 0; i < len(indices); i += 1 {
-        indices[i] = Diagonal(i + ddd.StartOffset)
+    for i, j := 0, 0; i < len(ddd.Data); i += 1 {
+        j = 0
+        for ; bestValues[j] < ddd.Data[i]; j += 1 {}
+        j -= 1
+
+        if j >= 0 {
+            for k := 0; k < j; k += 1 {
+                bestValues[k]  = bestValues[k + 1]
+                bestIndices[k] = bestIndices[k + 1]
+            }
+
+            bestValues[j]  = ddd.Data[i]
+            bestIndices[j] = Diagonal(i)
+        }
     }
 
-    // Sort according to ddd.Data descending order
-    sort.Slice(indices, func (i, j int) bool {
-        return ddd.Data[i] > ddd.Data[j]
-    })
+    // Return result
 
-    // Prepare and return result
-
-    result := make([]Diagonal, util.MinInt(amount, len(ddd.Data)))
-    copy(indices, result)
-
-    return result
+    return bestIndices
 }
