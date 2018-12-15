@@ -59,3 +59,21 @@ func GetStripOf(segs []Segment, extraWidth int, seqPair *SeqPair) Strip {
         MinOffset(rightDiag + Diagonal(extraWidth),  Diagonal(len(seqPair.S2) - 1)),
     }
 }
+
+// Returns segment start point according to its diagonal offset and P1.
+func (s *Segment) GetStartPoint() Point {
+    if s.Diag < 0 {
+        return Point{ s.P1, -int(s.Diag) + s.P1 }
+    } else {
+        return Point{ int(s.Diag) + s.P1, s.P1 }
+    }
+}
+
+// Returns segment end point according to its diagonal offset and P2.
+func (s *Segment) GetEndPoint() Point {
+    if s.Diag < 0 {
+        return Point{ s.P2, -int(s.Diag) + s.P2 }
+    } else {
+        return Point{ int(s.Diag) + s.P2, s.P2 }
+    }
+}

@@ -13,7 +13,7 @@ type SeqDotData [][]int
 /* --- */
 
 // Builds sequence dot data for given sequence.
-func BuildSeqDotDataFor(seq string) *SeqDotData {
+func BuildSeqDotDataFor(seq string) SeqDotData {
     n := len(seq) - 1
     data := make(SeqDotData, 256 * 256)
 
@@ -28,5 +28,5 @@ func BuildSeqDotDataFor(seq string) *SeqDotData {
         }
     }
 
-    return &data
+    return data
 }

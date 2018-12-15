@@ -24,7 +24,7 @@ type SequenceEntry struct {
 
 /* --- */
 
-func FromClusters(clustersDirPath string) *SequenceDb {
+func FromClusters(clustersDirPath string) SequenceDb {
     files, err := ioutil.ReadDir(clustersDirPath)
 
     if err != nil {
@@ -60,7 +60,7 @@ func FromClusters(clustersDirPath string) *SequenceDb {
         }
     }
 
-    return &sequences
+    return sequences
 }
 
 func SequencesToEntries(seqs []string) []SequenceEntry {
@@ -71,4 +71,9 @@ func SequencesToEntries(seqs []string) []SequenceEntry {
     }
 
     return entries
+}
+
+func DbBySequences(seqs []string) *SequenceDb {
+    entries := SequenceDb(SequencesToEntries(seqs))
+    return &entries
 }

@@ -4,6 +4,8 @@ import (
     "../util"
 )
 
+const MaxSequenceLength = 2 << 17
+
 /* --- */
 
 // Data from DotMatrix about matched diagonal dots of SeqPair.
@@ -12,41 +14,42 @@ import (
 // StartOffset keeps offset of array, i.e. Data indices start from 0,
 // but diagonal offsets starts from StartOffset.
 type DiagonalDotData struct {
-    Data        []uint
+    Data        [MaxSequenceLength]uint
     StartOffset int
+    length      int
 }
 
 /* --- */
 
 // Calculates DiagonalDotData by given SeqDotData of each sequence S1 and S2.
-// Lengths are used for determining array size and start diagonal offset.
-func FormDiagonalDotData(s1Dots *SeqDotData, s2 string, s1Len int) *DiagonalDotData {
+// S1 length are used for determining array size and start diagonal offset.
+// Result is written into given dddRef DiagonalDotData reference for memory issues.
+func FormDiagonalDotData(dddRef *DiagonalDotData, s1Dots SeqDotData, s2 string, s1Len int) {
 
     // Initialize Data
 
     s2Len := len(s2)
+    startOffset := -(s1Len - 1)
 
-    ddd := DiagonalDotData {
-        make([]uint, s1Len + s2Len - 1),
-        -(s1Len - 1),
+    dddRef.length = s1Len + s2Len - 1
+    dddRef.StartOffset = startOffset
+
+    for i := 0; i < dddRef.length; i += 1 {
+        dddRef.Data[i] = 0
     }
 
     // Fill data
 
     for s2Ind := 0; s2Ind < s2Len - 1; s2Ind += 1 {
         key := util.CombineSymbolPair(s2[s2Ind], s2[s2Ind + 1])
-        value := (*s1Dots)[key]
+        value := s1Dots[key]
 
         if value != nil {
             for _, s1Ind := range value {
-                ddd.Data[s2Ind - s1Ind - ddd.StartOffset] += 1
+                dddRef.Data[s2Ind - s1Ind - startOffset] += 1
             }
         }
     }
-
-    // Return result
-
-    return &ddd
 }
 
 // Selects <amount> best (by dot match number) diagonals.
@@ -58,7 +61,7 @@ func (ddd *DiagonalDotData) SelectBestDiagonals(amount int) []Diagonal {
     bestValues[amount] = 1000000
     bestIndices := make([]Diagonal, amount)
 
-    for i, j := 0, 0; i < len(ddd.Data); i += 1 {
+    for i, j := 0, 0; i < ddd.length; i += 1 {
         j = 0
         for ; bestValues[j] < ddd.Data[i]; j += 1 {}
         j -= 1
@@ -70,7 +73,7 @@ func (ddd *DiagonalDotData) SelectBestDiagonals(amount int) []Diagonal {
             }
 
             bestValues[j]  = ddd.Data[i]
-            bestIndices[j] = Diagonal(i)
+            bestIndices[j] = Diagonal(i + ddd.StartOffset)
         }
     }
 

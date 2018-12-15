@@ -1,8 +1,6 @@
 package structs
 
-import (
-    "../util"
-)
+import "../util"
 
 /* --- */
 
@@ -29,7 +27,8 @@ func (d Diagonal) TrimToBestSegment(seqPair *SeqPair, wm *WeightMatrix) Segment 
     startCol := util.MaxInt(0,  int(d))
 
     for i := 0; i < diagLen; i += 1 {
-        score += seqPair.WeightIn(wm, startRow + i, startCol + i)
+        score += (*wm)[(uint16(seqPair.S1[startRow + i]) << 8) | uint16(seqPair.S2[startCol + i])]
+        //score += seqPair.WeightIn(wm, startRow + i, startCol + i) /* Slower */
 
         if score <= 0 {
             score = 0
@@ -46,11 +45,18 @@ func (d Diagonal) TrimToBestSegment(seqPair *SeqPair, wm *WeightMatrix) Segment 
     return Segment { d, p1, p2 , maxScore }
 }
 
-func TrimToBestSegments(diags []Diagonal, seqPair *SeqPair, wm *WeightMatrix) []Segment {
-    result := make([]Segment, len(diags))
+func TrimToBestSegments(
+    ddd *DiagonalDotData, diags []Diagonal, seqPair *SeqPair, wm *WeightMatrix, dotMatchCutOff uint) []Segment {
 
-    for i := 0; i < len(diags); i += 1 {
-        result[i] = diags[i].TrimToBestSegment(seqPair, wm)
+    diagNum := len(diags)
+    result  := make([]Segment, diagNum)
+
+    for i := 0; i < diagNum; i += 1 {
+        if ddd.Data[int(diags[i]) - ddd.StartOffset] >= dotMatchCutOff {
+            result[i] = diags[i].TrimToBestSegment(seqPair, wm)
+        } else {
+            result[i] = Segment { diags[i], 0, 0, 0 }
+        }
     }
 
     return result
