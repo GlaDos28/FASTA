@@ -1,6 +1,8 @@
 package structs
 
-import "../util"
+import (
+    "../util"
+)
 
 /* --- */
 
@@ -15,17 +17,15 @@ type SeqDotData [][]int
 // Builds sequence dot data for given sequence.
 func BuildSeqDotDataFor(seq string) SeqDotData {
     n := len(seq) - 1
-    data := make(SeqDotData, 256 * 256)
+    data := make([][]int, 256 * 256)
+
+    for i := 0; i < 256 * 256; i += 1 {
+        data[i] = []int{}
+    }
 
     for i := 0; i < n; i += 1 {
-        key   := util.CombineSymbolPair(seq[i], seq[i + 1])
-        value := data[key]
-
-        if value != nil {
-            data[key] = append(value, i)
-        } else {
-            data[key] = []int{ i }
-        }
+        key := util.CombineSymbolPair(seq[i], seq[i + 1])
+        data[key] = append(data[key], i)
     }
 
     return data

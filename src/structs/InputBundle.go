@@ -13,4 +13,5 @@ type InputBundle struct {
     CutOff          int
     StripExtraWidth int
     BestMatchNum    int
+    DisplayAlign    bool
 }

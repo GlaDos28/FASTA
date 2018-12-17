@@ -10,11 +10,51 @@ import (
 // Data returned by FASTA algorithm
 type FastaResult []FastaResultEntry
 
-// Data entry of FastaResult structure.
-// Signifies one of the best sequence matches.
-type FastaResultEntry struct {
-    DbSequenceIndex int
-    Score int
+// Core algorithm for calculating best (by alignment score) sequence matches.
+// Given input sequence input.TargetSequence (with DotData) and sequence database,
+// the task is to find several best database sequences, i.e. whose alignment has the greatest score.
+func FASTA(dbStartOffset int, input *InputBundle, db SequenceDb) FastaResult {
+    entryNum        := len(db)
+    bestResultsHeap := NewHeapOfSize(input.BestMatchNum)
+
+    // Allocate space for methods of some algorithm steps
+    dddAlloc := &DiagonalDotData{}
+
+    for i := 0; i < entryNum; i += 1 {
+        alignResult := fastaEntry(db[i].Sequence, input, dddAlloc)
+        bestResultsHeap.Update(alignResult.Score, &FastaResultEntry {
+            DbSequenceIndex: dbStartOffset + i,
+            Score: alignResult.Score,
+        })
+    }
+
+    //fmt.Printf("Debug:\n" +
+    //   "\tDiagonalDD    %.3f (%d)\n" +
+    //   "\tBestDiagonals %.3f (%d)\n" +
+    //   "\tMakeSegments  %.3f (%d)\n" +
+    //   "\tCutOffFilter  %.3f (%d)\n" +
+    //   "\tFloydWarshall %.3f (%d)\n" +
+    //   "\tFormStrip     %.3f (%d)\n" +
+    //   "\tSmithWaterman %.3f (%d)\n" +
+    //   "%v passed to SW\n",
+    //   float32(C1 / 1000000) / 1000, C1 / int64(entryNum),
+    //   float32(C2 / 1000000) / 1000, C2 / int64(entryNum),
+    //   float32(C3 / 1000000) / 1000, C3 / int64(entryNum),
+    //   float32(C4 / 1000000) / 1000, C4 / int64(entryNum),
+    //   float32(C5 / 1000000) / 1000, C5 / PassedCutOffNum,
+    //   float32(C6 / 1000000) / 1000, C6 / PassedCutOffNum,
+    //   float32(C7 / 1000000) / 1000, C7 / PassedCutOffNum,
+    //   PassedCutOffNum - 1)
+
+    unconvertedValues := bestResultsHeap.ExtractSorted()
+
+    results := make([]FastaResultEntry, len(unconvertedValues))
+
+    for i, value := range unconvertedValues {
+        results[i] = *value.(*FastaResultEntry)
+    }
+
+    return results
 }
 
 /* --- */
@@ -29,46 +69,14 @@ type FastaResultEntry struct {
 //
 //var PassedCutOffNum int64 = 1
 
-// Core algorithm for calculating best (by alignment score) sequence matches.
-// Given input sequence input.TargetSequence (with DotData) and sequence database,
-// the task is to find several best database sequences, i.e. whose alignment has the greatest score.
-func FASTA(input *InputBundle, db SequenceDb) FastaResult {
-    entryNum        := len(db)
-    bestResultsHeap := NewHeapOfSize(input.BestMatchNum)
-
-    // Allocate space for methods of some algorithm steps
-    dddAlloc := &DiagonalDotData{}
-
-    for i := 0; i < entryNum; i += 1 {
-        alignResult := fastaEntry(db[i].Sequence, input, dddAlloc)
-
-        bestResultsHeap.Update(&FastaResultEntry {
-            DbSequenceIndex: i,
-            Score: alignResult.Score,
-        })
-    }
-
-    //fmt.Printf("Debug:\n" +
-    //    "\tDiagonalDD    %.3f (%d)\n" +
-    //    "\tBestDiagonals %.3f (%d)\n" +
-    //    "\tMakeSegments  %.3f (%d)\n" +
-    //    "\tCutOffFilter  %.3f (%d)\n" +
-    //    "\tFloydWarshall %.3f (%d)\n" +
-    //    "\tFormStrip     %.3f (%d)\n" +
-    //    "\tSmithWaterman %.3f (%d)\n" +
-    //    "%v passed to SW\n",
-    //    float32(C1 / 1000000) / 1000, C1 / int64(entryNum),
-    //    float32(C2 / 1000000) / 1000, C2 / int64(entryNum),
-    //    float32(C3 / 1000000) / 1000, C3 / int64(entryNum),
-    //    float32(C4 / 1000000) / 1000, C4 / int64(entryNum),
-    //    float32(C5 / 1000000) / 1000, C5 / PassedCutOffNum,
-    //    float32(C6 / 1000000) / 1000, C6 / PassedCutOffNum,
-    //    float32(C7 / 1000000) / 1000, C7 / PassedCutOffNum,
-    //    PassedCutOffNum - 1)
-
-    result := bestResultsHeap.ExtractSorted()
-
-    return result
+// Data entry of FastaResult structure.
+// Signifies one of the best sequence matches.
+type FastaResultEntry struct {
+    DbSequenceIndex int
+    Score           int
+    IsFull          bool
+    CorrectedScore  int
+    Align           string
 }
 
 // FASTA iteration with input sequence input.TargetSequence and DB sequence sDb.
@@ -83,7 +91,7 @@ func fastaEntry(sDb string, input *InputBundle, dddAlloc *DiagonalDotData) *Alig
     FormDiagonalDotData(dddAlloc, input.TargetSeqDots, seqPair.S2, len(seqPair.S1))
     //t2 := util.CurTime()
     //C1 += t2 - t1
-    diags := dddAlloc.SelectBestDiagonals(input.DiagFilterNum)
+    diags := dddAlloc.SelectBestDiagonals(input.DiagFilterNum, input.DotMatchCutOff)
     //t3 := util.CurTime()
     //C2 += t3 - t2
     segs := TrimToBestSegments(dddAlloc, diags, &seqPair, input.WeightMat, input.DotMatchCutOff)

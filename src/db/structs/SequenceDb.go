@@ -80,7 +80,7 @@ func sequencesToEntries(seqs []string) []SequenceEntry {
 }
 
 // Debug function. Creates sequence database by given array of sequences.
-func DbBySequences(seqs []string) *SequenceDb {
+func DbBySequences(seqs []string) SequenceDb {
     entries := SequenceDb(sequencesToEntries(seqs))
-    return &entries
+    return entries
 }
