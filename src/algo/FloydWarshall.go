@@ -2,6 +2,7 @@ package algo
 
 import (
     "../structs"
+    "../util"
 )
 
 /* --- */
@@ -18,8 +19,8 @@ type Graph struct {
 // Graph algorithm adapted for program needs. Calculates maximal distances between each pair of nodes.
 // Filters and returns segments which form maximal (by score) path.
 // Path consists of segments and their connections via gaps.
-func FloydWarshall(segs []structs.Segment, gapPenalty int) []structs.Segment {
-    graph := prepareGraph(segs, gapPenalty)
+func FloydWarshall(segs []structs.Segment, gapPenalty, maxDistError int) []structs.Segment {
+    graph := prepareGraph(segs, gapPenalty, maxDistError)
     floydWarshall(graph)
     return recoverSegs(graph)
 }
@@ -27,7 +28,7 @@ func FloydWarshall(segs []structs.Segment, gapPenalty int) []structs.Segment {
 // Prepares graph by given input segments.
 // Each segment forms a node, and edges are gaps connecting segments.
 // Note that initially edge's weight is gap penalty + scores of origin segment.
-func prepareGraph(segs []structs.Segment, gapPenalty int) *Graph {
+func prepareGraph(segs []structs.Segment, gapPenalty, maxDistErr int) *Graph {
 
     // Precalculating segments start and end points
 
@@ -53,11 +54,18 @@ func prepareGraph(segs []structs.Segment, gapPenalty int) *Graph {
 
             if i == j {
                 d[i][j] = 0
-            } else if endPoints[i].X <= startPoints[j].X && endPoints[i].Y <= startPoints[j].Y {
-                dist := (startPoints[j].X - endPoints[i].X) + (startPoints[j].Y - endPoints[i].Y)
-                d[i][j] = seg1.Score + dist * gapPenalty
             } else {
-                d[i][j] = -1000000
+                deltaX := util.Abs(endPoints[i].X - startPoints[j].X)
+                deltaY := util.Abs(endPoints[i].Y - startPoints[j].Y)
+
+                if startPoints[i].X < startPoints[j].X && startPoints[i].Y < startPoints[j].Y &&
+                    deltaX <= maxDistErr && deltaY <= maxDistErr {
+
+                    dist := deltaX + deltaY
+                    d[i][j] = seg1.Score + dist * gapPenalty
+                } else {
+                    d[i][j] = -1000000
+                }
             }
         }
     }

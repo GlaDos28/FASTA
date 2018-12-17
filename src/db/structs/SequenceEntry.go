@@ -2,6 +2,7 @@ package structs
 
 import (
     "bufio"
+    "fmt"
     "strings"
 )
 
@@ -16,8 +17,10 @@ type SequenceEntry struct {
 
 /* --- */
 
+const NameSymbolsCut = 3
+
 // Reads sequence entry from given reader.
-func ReadFrom(reader *bufio.Reader) (*SequenceEntry, bool) {
+func ReadFrom(reader *bufio.Reader, index int) (*SequenceEntry, bool) {
     for {
         firstChar, err := reader.Peek(1)
 
@@ -42,7 +45,7 @@ func ReadFrom(reader *bufio.Reader) (*SequenceEntry, bool) {
         return nil, false
     }
 
-    name := string(nameLine[1:])
+    name := fmt.Sprintf("%s", string(nameLine[NameSymbolsCut:]))
     seq  := strings.Builder{}
 
     for {

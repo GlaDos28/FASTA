@@ -39,3 +39,11 @@ func ReverseString(s string) string {
 
     return reversed.String()
 }
+
+func Abs(x int) int {
+    if x < 0 {
+        return -x
+    } else {
+        return x
+    }
+}

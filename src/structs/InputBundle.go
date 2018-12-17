@@ -11,6 +11,7 @@ type InputBundle struct {
     DiagFilterNum   int
     DotMatchCutOff  uint
     CutOff          int
+    GraphMaxDistErr int
     StripExtraWidth int
     BestMatchNum    int
     DisplayAlign    bool

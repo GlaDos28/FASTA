@@ -106,7 +106,7 @@ func fastaEntry(sDb string, input *InputBundle, dddAlloc *DiagonalDotData) *Alig
     }
 
     //PassedCutOffNum += 1
-    graphFilteredSegs := FloydWarshall(filteredSegs, input.GapPenalty)
+    graphFilteredSegs := FloydWarshall(filteredSegs, input.GapPenalty, input.GraphMaxDistErr)
     //t6 := util.CurTime()
     //C5 += t6 - t5
     strip := GetStripOf(graphFilteredSegs, input.StripExtraWidth, &seqPair)

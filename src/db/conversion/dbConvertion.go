@@ -64,15 +64,17 @@ func ReadSequencesFromFile(filePath string) []SequenceEntry {
     // Read raw database
 
     sequences := make([]SequenceEntry, 0, SequenceInitCap)
+    counter   := 0
 
     for {
-        seq, ok := ReadFrom(reader)
+        seq, ok := ReadFrom(reader, counter)
 
         if ok {
             sequences = append(sequences, *seq)
         } else {
             break
         }
+        counter += 1
     }
 
     return sequences

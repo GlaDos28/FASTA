@@ -74,9 +74,14 @@ func (ddd *DiagonalDotData) SelectBestDiagonals(amount int, dotMatchCutOff uint)
 
     // Store array of best values (and indices) with naive traverse and update.
 
-    bestValues := make([]uint, amount + 1)
-    bestValues[amount] = 1000000
+    bestValues := make([]int, amount + 1)
     bestIndices := make([]Diagonal, amount)
+
+    for i := range bestValues {
+        bestValues[i] = -1
+    }
+
+    bestValues[amount] = 1000000
 
     for i, j := 0, 0; i < ddd.Length; i += 1 {
         if ddd.Data[i] < dotMatchCutOff {
@@ -84,7 +89,7 @@ func (ddd *DiagonalDotData) SelectBestDiagonals(amount int, dotMatchCutOff uint)
         }
 
         j = 0
-        for ; bestValues[j] < ddd.Data[i]; j += 1 {}
+        for ; bestValues[j] < int(ddd.Data[i]); j += 1 {}
         j -= 1
 
         if j >= 0 {
@@ -93,20 +98,16 @@ func (ddd *DiagonalDotData) SelectBestDiagonals(amount int, dotMatchCutOff uint)
                 bestIndices[k] = bestIndices[k + 1]
             }
 
-            bestValues[j]  = ddd.Data[i]
+            bestValues[j]  = int(ddd.Data[i])
             bestIndices[j] = Diagonal(i + ddd.StartOffset)
         }
     }
 
     firstReal := 0
 
-    for ; bestValues[firstReal] == 0; firstReal += 1 {}
-
-    if firstReal > 0 {
-        firstReal -= 1
-    }
+    for ; firstReal < amount && bestValues[firstReal] == -1; firstReal += 1 {}
 
     // Return result
 
-    return bestIndices
+    return bestIndices[firstReal:]
 }
