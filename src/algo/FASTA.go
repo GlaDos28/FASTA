@@ -1,6 +1,7 @@
 package algo
 
 import (
+    . "../db/structs"
     . "../structs"
 )
 
@@ -12,8 +13,8 @@ type FastaResult []FastaResultEntry
 // Data entry of FastaResult structure.
 // Signifies one of the best sequence matches.
 type FastaResultEntry struct {
-    DbSequence string
-    Score      int
+    DbSequenceIndex int
+    Score int
 }
 
 /* --- */
@@ -32,19 +33,19 @@ type FastaResultEntry struct {
 // Given input sequence input.TargetSequence (with DotData) and sequence database,
 // the task is to find several best database sequences, i.e. whose alignment has the greatest score.
 func FASTA(input *InputBundle, db SequenceDb) FastaResult {
-    entryNum     := len(db)
-    bestResult   := AlignResult{ Score: -1 }
-    bestSequence := ""
+    entryNum        := len(db)
+    bestResultsHeap := NewHeapOfSize(input.BestMatchNum)
 
     // Allocate space for methods of some algorithm steps
     dddAlloc := &DiagonalDotData{}
 
     for i := 0; i < entryNum; i += 1 {
         alignResult := fastaEntry(db[i].Sequence, input, dddAlloc)
-        if alignResult.Score > bestResult.Score {
-            bestResult = *alignResult
-            bestSequence = db[i].Sequence
-        }
+
+        bestResultsHeap.Update(&FastaResultEntry {
+            DbSequenceIndex: i,
+            Score: alignResult.Score,
+        })
     }
 
     //fmt.Printf("Debug:\n" +
@@ -65,12 +66,7 @@ func FASTA(input *InputBundle, db SequenceDb) FastaResult {
     //    float32(C7 / 1000000) / 1000, C7 / PassedCutOffNum,
     //    PassedCutOffNum - 1)
 
-    result := make([]FastaResultEntry, 1) /* TODO: generalize for input.BestMatchNum entries */
-
-    result[0] = FastaResultEntry {
-        DbSequence: bestSequence,
-        Score: bestResult.Score,
-    }
+    result := bestResultsHeap.ExtractSorted()
 
     return result
 }
@@ -79,7 +75,7 @@ func FASTA(input *InputBundle, db SequenceDb) FastaResult {
 // Can be parallelized: fastaEntry() works independently and can be executed in individual thread.
 func fastaEntry(sDb string, input *InputBundle, dddAlloc *DiagonalDotData) *AlignResult {
     seqPair := SeqPair {
-        S1: input.TargetSequence,
+        S1: input.TargetSequence.Sequence,
         S2: sDb,
     }
 

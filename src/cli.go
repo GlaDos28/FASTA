@@ -2,6 +2,8 @@ package main
 
 import (
     "./algo"
+    "./db/conversion"
+    dbStructs "./db/structs"
     "./structs"
     "./util"
     "fmt"
@@ -13,18 +15,22 @@ import (
 const GoRoutineNum = 128
 
 func main() {
-    if len(os.Args) <= 1 {
-        fmt.Println("Usage: go run cli.go <converted DB clusters directory path>")
+    if len(os.Args) != 3 {
+        fmt.Println("Usage: go run cli.go <converted DB clusters path> <target sequence path>")
         return
     }
 
-    sequence     := "MASSINGRKPSEIFKAQALLYKHIYAFIDSMSLKWAVEMNIPNIIQNHGKPISLSNLVSILQVPSSKIGNVRRLMRYLAHNGFFEIITKEEESYALTVASELLVRGSDLCLAPMVECVLDPTLSGSYHELKKWIYEEDLTLFGVTLGSGFWDFLDKNPEYNTSFNDAMASDSKLINLALRDCDFVFDGLESIVDVGGGTGTTAKIICETFPKLKCIVFDRPQVVENLSGSNNLTYVGGDMFTSIPNADAVLLKYILHNWTDKDCLRILKKCKEAVTNDGKRGKVTIIDMVIDKKKDENQVTQIKLLMDVNMACLNGKERNEEEWKKLFIEAGFQHYKISPLTGFLSLIEIYP"
-    dbDirPath    := os.Args[1]
+    dbDirPath  := os.Args[1]
+    targetPath := os.Args[2]
+
     weightMatrix := structs.Blosum62()
+
+    sequence := conversion.ReadSequencesFromFile(targetPath)[0]
+
     //sequenceDb   := structs.DbBySequences([]string{
     //    "MASSINGRKPSEIFKAQALLYKHIYAFIDSMSLKWAVEMNIPNIIQNHGKPISLSNLVSILQVPSSKIGNVRRLMRYLAHNGFFEIITKEEESYALTVASELLVRGSDLCLAPMVECVLDPTLSGSYHELKKWIYEEDLTLFGVTLGSGFWDFLDKNPEYNTSFNDAMASDSKLINLALRDCDFVFDGLESIVDVGGGTGTTAKIICETFPKLKCIVFDRPQVVENLSGSNNLTYVGGDMFTSIPNADAVLLKYILHNWTDKDCLRILKKCKEAVTNDGKRGKVTIIDMVIDKKKDENQVTQIKLLMDVNMACLNGKERNEEEWKKLFIEAGFQHYKISPLTGFLSLIEIYP",
     //})
-    sequenceDb := structs.FromClusters(dbDirPath)
+    sequenceDb := dbStructs.FromClusters(dbDirPath)
 
     fmt.Println("DB sequences were successfully loaded")
 
@@ -32,14 +38,14 @@ func main() {
 
     input := structs.InputBundle {
         TargetSequence: sequence,
-        TargetSeqDots: structs.BuildSeqDotDataFor(sequence),
+        TargetSeqDots: structs.BuildSeqDotDataFor(sequence.Sequence),
         WeightMat: weightMatrix,
         GapPenalty: -1,
         DiagFilterNum: 10,
         DotMatchCutOff: 11,
         CutOff: 26,
         StripExtraWidth: 0,
-        BestMatchNum: 1,
+        BestMatchNum: 10,
     }
 
     // Call FASTA algorithm
@@ -78,7 +84,8 @@ func main() {
     // Print result
 
     fmt.Println("Input sequence:")
-    fmt.Println(sequence)
+    fmt.Printf(">%s\n", sequence.Name)
+    fmt.Println(sequence.Sequence)
     fmt.Println("Converted DB clusters directory path:")
     fmt.Println(dbDirPath)
 
@@ -98,8 +105,11 @@ func main() {
     })
 
     for i := 0; i < input.BestMatchNum; i += 1 {
+        dbSequence := sequenceDb[bestResEntries[i].DbSequenceIndex]
+
         fmt.Println()
-        fmt.Println(bestResEntries[i].DbSequence)
+        fmt.Printf(">%s\n", dbSequence.Name)
+        fmt.Println(dbSequence.Sequence)
         fmt.Printf("Score: %d\n", bestResEntries[i].Score)
     }
 

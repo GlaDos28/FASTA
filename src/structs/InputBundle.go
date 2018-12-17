@@ -1,8 +1,10 @@
 package structs
 
+import "../db/structs"
+
 // Program input data. Principally stores data for FASTA algorithm.
 type InputBundle struct {
-    TargetSequence  string
+    TargetSequence  structs.SequenceEntry
     TargetSeqDots   SeqDotData
     WeightMat       *WeightMatrix
     GapPenalty      int

@@ -16,14 +16,10 @@ const SequenceInitCap      = 1000000
 // Adapter for database of sequences and their dots data.
 type SequenceDb []SequenceEntry
 
-// Sequence database entry.
-// Stores sequence in string form and data about precalculated dots.
-type SequenceEntry struct {
-    Sequence string
-}
-
 /* --- */
 
+// Loads sequence database from precalculated clusters.
+// Cluster directory path must be provided.
 func FromClusters(clustersDirPath string) SequenceDb {
     files, err := ioutil.ReadDir(clustersDirPath)
 
@@ -44,36 +40,47 @@ func FromClusters(clustersDirPath string) SequenceDb {
 
             scanner := bufio.NewScanner(file)
             buf := make([]byte, 0, 1024 * 1024)
-            scanner.Buffer(buf, 10 * 1024 * 1024)
+            scanner.Buffer(buf, 100 * 1024 * 1024)
 
             for scanner.Scan() {
-                text  := scanner.Text()
-                lines := strings.Split(text, "\n")
+                seqName  := scanner.Text()
+                scanner.Scan()
+                seqValue := scanner.Text()
 
-                for _, sequence := range lines {
-                    sequences = append(sequences, SequenceEntry{ Sequence: string(sequence) })
-                }
+                sequences = append(sequences, SequenceEntry{
+                    Name:     seqName,
+                    Sequence: seqValue,
+                })
             }
 
-            file.Close()
-            //break /* TODO: remove */
+            err = file.Close()
+
+            if err != nil {
+                panic(err)
+            }
         }
     }
 
     return sequences
 }
 
-func SequencesToEntries(seqs []string) []SequenceEntry {
+// Converts sequences to database entries.
+// Sequence names are set to "?".
+func sequencesToEntries(seqs []string) []SequenceEntry {
     entries := make([]SequenceEntry, len(seqs))
 
     for i, seq := range seqs {
-        entries[i] = SequenceEntry{ Sequence: seq }
+        entries[i] = SequenceEntry{
+            Name: "?",
+            Sequence: seq,
+        }
     }
 
     return entries
 }
 
+// Debug function. Creates sequence database by given array of sequences.
 func DbBySequences(seqs []string) *SequenceDb {
-    entries := SequenceDb(SequencesToEntries(seqs))
+    entries := SequenceDb(sequencesToEntries(seqs))
     return &entries
 }
